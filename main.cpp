@@ -23,7 +23,8 @@ void network(){
     //
 }
 void sender(){
-    //
+    //kirooo
+    int x;
 }
 void receiver (){
     // 
