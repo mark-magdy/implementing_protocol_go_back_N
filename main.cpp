@@ -41,6 +41,7 @@ void receiver (){
             if(received_frame.seq == expected_to_be_received && received_frame.check == 1){ //wire pair (sent, ack)
                 //send ack
                 cout<<"Ack:"<<received_frame.seq<<endl;
+                Error_Discard_upcoming_frames=0;
                 expected_to_be_received++;
                 feedback.kind=ack;
                 feedback.ack = received_frame.seq;
