@@ -12,11 +12,13 @@
 typedef unsigned int seq_nr;
 typedef struct {unsigned char data[MAX_PKT];} packet ;
 typedef enum {info,ack,nak, notframe} frame_kind;
+typedef enum {zero, one} check_sum;
 typedef struct{
     frame_kind kind= notframe ;
     seq_nr seq;
     seq_nr ack;
     packet info;
+    check_sum check;
 }Frame;
 #define AT_RECEIVER second
 #define AT_SENDER first
