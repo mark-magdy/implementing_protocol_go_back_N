@@ -178,13 +178,13 @@ void receiver (){
             to_physical_layer_to_sender(feedback);
         }
         else if(Error_Discard_upcoming_frames == 1){ // wire pair (sent,nack)
-            cout<<"At Receiver : Nack:"<<received_frame.seq<<endl;
+            cout<<"At Receiver : Discarded!!"<<received_frame.seq<<endl;
             feedback.kind = nak;
             feedback.ack = received_frame.seq;
             to_physical_layer_to_sender(feedback);
         }
         else if(received_frame.seq != expected_to_be_received || received_frame.check == 0){ // wire pair (sent,discard)
-            cout<<"At Receiver: Discarded !! "<<endl;
+            cout<<"At Receiver: Error !! "<<endl;
             Error_Discard_upcoming_frames=1;
         }
 
