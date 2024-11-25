@@ -35,8 +35,8 @@ void receiver (){
     static int Error_Discard_upcoming_frames=0;
     Frame received_frame;
     Frame feedback;
-    from_physical_layer_at_receiver(&received_frame); //received_frame now is updated by physical layer
-    if(received_frame.frame_kind == info )
+    from_physical_layer_at_receiver(received_frame); //received_frame now is updated by physical layer
+    if(received_frame.kind == info )
         {
             if(received_frame.seq == expected_to_be_received && received_frame.check == 1){ //wire pair (sent, ack)
                 //send ack
@@ -45,7 +45,7 @@ void receiver (){
                 expected_to_be_received++;
                 feedback.kind=ack;
                 feedback.ack = received_frame.seq;
-                to_physical_layer_to_sender(&feedback);
+                to_physical_layer_to_sender(feedback);
             }
             else if(received_frame.seq != expected_to_be_received || received_frame.check == 0) // wire pair (sent,discard)
             {
@@ -55,14 +55,14 @@ void receiver (){
             else if(Error_Discard_upcoming_frames == 1) // wire pair (sent,nack)
             {
                 cout<<"Nack:"<<received_frame.seq<<endl;
-                feedback.kind = nack;
+                feedback.kind = nak;
                 feedback.ack = received_frame.seq;
-                to_physical_layer_to_sender(&feedback);
+                to_physical_layer_to_sender(feedback);
             }
         }
-    else if (received_frame.frame_kind != info)
+    else if (received_frame.kind != info)
         {
-            cout<<"No frames received"<<endl; //for testing
+            //cout<<"No frames received"<<endl; //for testing
         }
 }
 int main() {
