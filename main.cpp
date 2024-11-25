@@ -16,36 +16,40 @@ int generateRandomInt(int lower, int upper) {
     uniform_int_distribution<> dist(lower, upper);  // Distribution defined for range
     return dist(gen);                               // Generate random number
 }
-
+void print_queue(queue<string> newQueue){
+queue<string> tempQueue = newQueue; // Copy of the queue for printing
+    while (!tempQueue.empty()) {
+        cout << tempQueue.front() << " ";
+        tempQueue.pop();
+    }
+    cout<<endl;
+  }
 void to_physical_layer_to_receiver(Frame frame) {
     //TODO: introduce error here
     int random_error = generateRandomInt(1, 100);
 
-//    if(random_error%9 ==0 && random_error%2==0)
-//    {
-//        frame.check=zero;                         //error bit
-//    }
-//    if(random_error%6==0 && random_error%16==0)
-//    {
-//        frame.kind= notframe;                 //corrupted frame
-//    }
-    if(random_error%4==0){
-        frame.kind= notframe;
+    if(random_error%9 ==0)
+    {
+        frame.check=zero;                         //error bit
     }
-    timeline[cur_time+PROPAGATION_DELAY].AT_RECEIVER=frame;
+    if(random_error%6==0)
+    {
+        frame.kind= notframe;                 //corrupted frame
+    }
+    timeline[cur_time+PROPAGATION_DELAY].AT_RECEIVER =frame;
 }
 void to_physical_layer_to_sender(Frame frame) {
     //TODO : introduce error here
     int random_error = generateRandomInt(1, 100);
-//
-//    if(random_error%9 ==0 && random_error%2==0)
-//    {
-//        frame.check=zero;                         //error bit
-//    }
-//    if(random_error%6==0 && random_error%4==0)
-//    {
-//        frame.kind= notframe;                 //corrupted frame
-//    }
+
+    if(random_error%9 ==0)
+   {
+        frame.check=zero;                         //error bit
+    }
+    if(random_error%6==0)
+    {
+        frame.kind= notframe;                 //corrupted frame
+    }
     timeline[cur_time+PROPAGATION_DELAY].AT_SENDER =frame;
 }
 void from_physical_layer_at_sender(Frame &frame) {
@@ -125,12 +129,12 @@ void sender(){
     if (retransmissions){
         send(next_send,buffer[next_send]);
 //        cout<<"sending frame "<<next_send<<" "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
-        cout<<">>  curent time is "<<cur_time<<endl;
+        //cout<<">>  curent time is "<<cur_time<<endl;
         cout<<"At Sender : sending frame no > "<<next_send<<" < with msg '"<<buffer[next_send]<<"'"<<endl;
         increase(next_send);
         retransmissions--;
     }else if( nbuffer && timeout()){
-        cout<<">>  curent time is "<<cur_time<<endl;
+        //cout<<">>  curent time is "<<cur_time<<endl;
         cout<<"At sender: timeout "<<timers[ack_epected]<<endl;
         next_send=ack_epected;
         send(next_send,buffer[next_send]);
@@ -144,7 +148,7 @@ void sender(){
         nbuffer++;
         send(next_send,buffer[next_send]);
 //        cout<<"sending frame no "<<next_send<<" with msg "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
-        cout<<">>  curent time is "<<cur_time<<endl;
+        //cout<<">>  curent time is "<<cur_time<<endl;
         cout<<"At Sender : sending frame no > "<<next_send<<" < with msg '"<<buffer[next_send]<<"'"<<endl;
         increase(next_send);
     }
@@ -170,11 +174,12 @@ void receiver (){
     if(received_frame.kind == info ){
         if(received_frame.seq == expected_to_be_received && received_frame.check == 1){ //wire pair (sent, ack)
             //send ack
-            cout<<"At Receiver: received Ack no "<<received_frame.seq<<endl;
+            cout<<"At Receiver: sending to sender Ack no "<<received_frame.seq<<endl;
             Error_Discard_upcoming_frames=0;
             expected_to_be_received++;
             feedback.kind=ack;
             feedback.ack = received_frame.seq;
+            to_network_layer_at_receiver(received_frame.info);
             to_physical_layer_to_sender(feedback);
         }
         else if(Error_Discard_upcoming_frames == 1){ // wire pair (sent,nack)
@@ -239,13 +244,20 @@ int main() {
     }
     int index = 0;
     unordered_set<int> done;
-    for (cur_time = 0; cur_time < 30; ++cur_time) { // each step is a unit of time
+    for (cur_time = 0; cur_time < 100; ++cur_time) { // each step is a unit of time
         networkInterface(index, done);
 //        cout << "curTime: " << cur_time << " - frame in sender is " << timeline[cur_time].AT_SENDER.info
 //             << " frame in receiver " << timeline[cur_time].AT_RECEIVER.info << endl;
-//        cout<<">>  curent time is "<<cur_time<<endl;
+        cout<<">>  curent time is "<<cur_time<<endl;
+        cout<< "Network-Sender's Packets"<<" ";
+        print_queue(all_packets_network);
+
         sender();
         receiver();
+
+        cout<< "Network-Receiver's Packets"<<" ";
+        print_queue(all_packets_reciver);
+
         cout << endl ;
     }
 
