@@ -9,8 +9,13 @@
 #define MAX_PKT 1024
 #define MAX_SEQ 1000
 
+#include <string>
+#include <queue>
+using namespace std;
+
 typedef unsigned int seq_nr;
-typedef struct {unsigned char data[MAX_PKT];} packet ;
+typedef string packet;
+
 typedef enum {info,ack,nak, notframe} frame_kind;
 typedef enum {zero, one} check_sum;
 typedef struct{
@@ -32,4 +37,6 @@ int no_of_frames_to_send ;
 int seq_no_turn = 1 ;
 
 
+queue<packet> all_packets_network;
+queue<packet> all_packets_reciver;
 #endif //PROJECT_PROTOCOL5_H

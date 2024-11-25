@@ -28,17 +28,30 @@ void from_physical_layer_at_receiver(Frame &frame) {
 }
 
 
-void to_network_layer_to_receiver(packet pack) {
+
+
+
+packet from_network_layer_at_sender() {
+    if (!all_packets_network.empty()) {
+        packet firstElement = all_packets_network.front();
+        all_packets_network.pop();
+        return firstElement;
+    }
+    else {
+        return "";
+    }
+}
+
+void  to_network_layer_at_receiver(const packet& str) {
+    all_packets_reciver.push(str); // Push the string
 
 }
 
-void from_network_layer_at_sender(packet &pack) {
 
+bool network_is_ready() {
+    return !all_packets_network.empty();
 }
 
-
-
-bool network_is_ready();
 bool physical_to_sender_ready(){
     Frame f;
     from_physical_layer_at_sender(f);
@@ -82,7 +95,11 @@ void stop_timer(seq_nr r)
 bool timeout()
 {
     if(timers[ack_epected]==-1)return 0;
-    if(cur_time-timers[ack_epected]>=TIMER_TIMOUT)return 1;
+    if((cur_time-timers[ack_epected])>=TIMER_TIMOUT)
+    {
+        cout<<cur_time<<" "<<timers[ack_epected]<<endl;
+        return 1;
+    }
     return 0;
 }
 
@@ -99,9 +116,6 @@ void send(seq_nr f_n,packet f_info)
 
 
 
-void network(){
-    //
-}
 
 
 
@@ -109,16 +123,19 @@ void sender(){
 
     if (network_is_ready())
     {
-        from_network_layer_at_sender(buffer[next_send]);
+       buffer[next_send]= from_network_layer_at_sender();
         nbuffer++;
         send(next_send,buffer[next_send]);
+        cout<<"sending frame "<<next_send<<" "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
         increase(next_send);
+
     }
 
     if(physical_to_sender_ready())
     {
         Frame r;
         from_physical_layer_at_sender(r);
+        cout<<"receiving frame "<<r.ack<<" "<<r.info<<" "<<ack_epected<<endl;
         while(between (ack_epected,r.ack,next_send))
         {
             nbuffer--;
@@ -126,16 +143,18 @@ void sender(){
             increase(ack_epected);
 
         }
+        cout<<ack_epected<<endl;
     }
-    if(timeout)
+    if(timeout())
     {
+        cout<<"timeout "<<timers[ack_epected]<<endl;
         next_send=ack_epected;
         for(int i=0;i<nbuffer;i++)
         {
             send(next_send,buffer[next_send]);//retransmit all frames
             increase(next_send);
         }
-
+       cout<<ack_epected<<" "<<next_send<<endl;
     }
 
 
@@ -175,14 +194,75 @@ void receiver (){
             cout<<"No frames received"<<endl; //for testing
         }
 }
+
+
+
+int propagation_delay;
+int frame_time;
+vector<packet> data_from_input;
+packet input;
+
+bool network(const vector<string>& data_from_input, int& index, unordered_set<int>& done){
+
+
+
+    if (done.size() == data_from_input.size()) {
+        return false; //  enqueueing is complete
+    }
+
+
+    if (cur_time % frame_time == 0) {
+        // Check if the current index has already been processed
+        if (done.find(index) == done.end()) {
+            // Enqueue the string
+            all_packets_network.push(data_from_input[index]);
+
+
+
+            done.insert(index);
+        }
+
+
+
+        index = (index + 1) % data_from_input.size();
+    }
+
+    return true;
+}
+
 int main() {
 
     cout << "PLEASE enter the number of frames you want to send\n";
     cin >> no_of_frames_to_send;
+
+//    cout << "PLEASE enter the propagation delay you want to send\n";
+//    cin >> propagation_delay;
+
+    cout << "PLEASE enter the time of frames you want to send\n";
+    cin >> frame_time;
+    cin.ignore();
+    cout << "PLEASE enter the frames\n";
+
+    for (int i = 0; i < no_of_frames_to_send; i++) {
+        getline(cin, input);
+        data_from_input.push_back(input);
+    }
+    int index = 0;
+    unordered_set<int> done;
     for (cur_time = 0; cur_time < 1e6; ++cur_time) { // each step is a unit of time
+
+        if (!network(data_from_input, index, done)) {
+            // Exit the loop if all strings are processed
+            break;
+        }
+
+
+        cout << "curent time is " << cur_time << " frame in sender is " << timeline[cur_time].AT_SENDER.info
+             << " frame in receiver " << timeline[cur_time].AT_RECEIVER.info << endl;
         sender();
         receiver();
     }
 
-    return 0;
+
+return 0;
 }
