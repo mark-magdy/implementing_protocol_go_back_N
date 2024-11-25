@@ -7,7 +7,7 @@
 #define PROPAGATION_DELAY 2
 #define TIMER_TIMOUT 5
 #define MAX_PKT 1024
-#define MAX_SEQ 1e3
+#define MAX_SEQ 1000
 
 typedef unsigned int seq_nr;
 typedef struct {unsigned char data[MAX_PKT];} packet ;
@@ -20,6 +20,8 @@ typedef struct{
     packet info;
     check_sum check;
 }Frame;
+
+
 #define AT_RECEIVER second
 #define AT_SENDER first
 #define inc(k) if (k<MAX_SEQ) k++ else k=0

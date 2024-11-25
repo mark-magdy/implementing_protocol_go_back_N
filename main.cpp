@@ -4,15 +4,19 @@ using namespace std ;
 /**
 Description : local variable "frame" keeps getting updated when passed between layers
 
+ THE LINES CARRYING DATA IS REPRESENTED BY QUEUES
+
 **/
 int expected_to_be_received =0;
 vector<pair<Frame,Frame>> timeline(1e4); // (frames at sender ,  frames at reciver ) //models the physical wire
 
-void to_physical_layer_to_receiver(Frame &frame) {
+
+
+void to_physical_layer_to_receiver(Frame frame) {
     //TODO: introduce error here
     timeline[cur_time+PROPAGATION_DELAY].AT_RECEIVER=frame;
 }
-void to_physical_layer_to_sender(Frame &frame) {
+void to_physical_layer_to_sender(Frame frame) {
     //TODO : introduce error here
     timeline[cur_time+PROPAGATION_DELAY].AT_SENDER =frame;
 }
@@ -23,12 +27,75 @@ void from_physical_layer_at_receiver(Frame &frame) {
     frame = timeline[cur_time].AT_RECEIVER ;
 }
 
+
+void to_network_layer_to_receiver(packet pack) {
+
+}
+
+void from_network_layer_at_sender(packet &pack) {
+
+}
+
+
+
+bool network_is_ready();
+bool physical_to_sender_ready();
+bool physical_to_receiver_ready();
+
+
+void increase (seq_nr &x)
+{
+x++;
+x=x%(MAX_SEQ+1);
+}
+
+
+queue<pair<int,seq_nr>>timers;
+void start_timer (seq_nr s)
+{
+    timers.push(make_pair(cur_time,s));
+}
+bool epected_ack(seq_nr r)
+{
+  return  timers.front().second==r;
+}
+
+void send(seq_nr f_n,packet f_info)
+{
+ Frame s;
+ s.seq=f_n;
+ s.info=f_info;
+    to_physical_layer_to_sender(s);
+    start_timer(s.seq);
+}
+
 void network(){
     //
 }
+packet buffer[MAX_SEQ+1];//the packets buffered at sender
+int nbuffer;    //size of window at sender
+seq_nr next_send; // sequence of the next send frame
 void sender(){
-    //kirooo
-    int x;
+
+    if (network_is_ready())
+    {
+        from_network_layer_at_sender(buffer[next_send]);
+        nbuffer++;
+        send(next_send,buffer[next_send]);
+        increase(next_send);
+    }
+
+    if(physical_to_receiver_ready())
+    {
+        Frame r;
+        from_physical_layer_at_sender(r);
+        if(epected_ack(r.ack))
+        {
+
+        }
+    }
+
+
 }
 void receiver (){
     // yous was here
@@ -62,7 +129,7 @@ void receiver (){
         }
     else if (received_frame.kind != info)
         {
-            //cout<<"No frames received"<<endl; //for testing
+            cout<<"No frames received"<<endl; //for testing
         }
 }
 int main() {
@@ -72,5 +139,6 @@ int main() {
         sender();
         receiver();
     }
+
     return 0;
 }
