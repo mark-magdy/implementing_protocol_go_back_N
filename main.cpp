@@ -10,14 +10,39 @@ Description : local variable "frame" keeps getting updated when passed between l
 int expected_to_be_received =0;
 vector<pair<Frame,Frame>> timeline(1e4); // (frames at sender ,  frames at reciver ) //models the physical wire
 
-
+int generateRandomInt(int lower, int upper) {
+    static random_device rd;                        // Seed only once
+    static mt19937 gen(rd());                       // Mersenne Twister engine
+    uniform_int_distribution<> dist(lower, upper);  // Distribution defined for range
+    return dist(gen);                               // Generate random number
+}
 
 void to_physical_layer_to_receiver(Frame frame) {
     //TODO: introduce error here
+    int random_error = generateRandomInt(1, 100);
+    
+    if(random_error%9 ==0 && random_error%2==0)
+    {
+        frame.check=0;                         //error bit
+    }
+    if(random_error%6==0 && random_error%16==0)
+    {
+        frame.kind= notframe;                 //corrupted frame
+    }
     timeline[cur_time+PROPAGATION_DELAY].AT_RECEIVER=frame;
 }
 void to_physical_layer_to_sender(Frame frame) {
     //TODO : introduce error here
+ int random_error = generateRandomInt(1, 100);
+    
+    if(random_error%9 ==0 && random_error%2==0)
+    {
+        frame.check=0;                         //error bit
+    }
+    if(random_error%6==0 && random_error%4==0)
+    {
+        frame.kind= notframe;                 //corrupted frame
+    }
     timeline[cur_time+PROPAGATION_DELAY].AT_SENDER =frame;
 }
 void from_physical_layer_at_sender(Frame &frame) {
