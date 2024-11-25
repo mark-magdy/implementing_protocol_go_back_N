@@ -21,28 +21,31 @@ void to_physical_layer_to_receiver(Frame frame) {
     //TODO: introduce error here
     int random_error = generateRandomInt(1, 100);
 
-    if(random_error%9 ==0 && random_error%2==0)
-    {
-        frame.check=zero;                         //error bit
-    }
-    if(random_error%6==0 && random_error%16==0)
-    {
-        frame.kind= notframe;                 //corrupted frame
+//    if(random_error%9 ==0 && random_error%2==0)
+//    {
+//        frame.check=zero;                         //error bit
+//    }
+//    if(random_error%6==0 && random_error%16==0)
+//    {
+//        frame.kind= notframe;                 //corrupted frame
+//    }
+    if(random_error%4==0){
+        frame.kind= notframe;
     }
     timeline[cur_time+PROPAGATION_DELAY].AT_RECEIVER=frame;
 }
 void to_physical_layer_to_sender(Frame frame) {
     //TODO : introduce error here
- int random_error = generateRandomInt(1, 100);
-
-    if(random_error%9 ==0 && random_error%2==0)
-    {
-        frame.check=zero;                         //error bit
-    }
-    if(random_error%6==0 && random_error%4==0)
-    {
-        frame.kind= notframe;                 //corrupted frame
-    }
+    int random_error = generateRandomInt(1, 100);
+//
+//    if(random_error%9 ==0 && random_error%2==0)
+//    {
+//        frame.check=zero;                         //error bit
+//    }
+//    if(random_error%6==0 && random_error%4==0)
+//    {
+//        frame.kind= notframe;                 //corrupted frame
+//    }
     timeline[cur_time+PROPAGATION_DELAY].AT_SENDER =frame;
 }
 void from_physical_layer_at_sender(Frame &frame) {
@@ -70,8 +73,8 @@ bool network_is_ready() {
 bool physical_to_sender_ready(){
     Frame f;
     from_physical_layer_at_sender(f);
-    if(f.kind==notframe)return 0;
-    else return 1;
+    if(f.kind==ack)return 1;
+    else return 0;
 }
 bool physical_to_receiver_ready();
 void increase (seq_nr &x){
@@ -99,9 +102,8 @@ void stop_timer(seq_nr r){
 }
 bool timeout(){
     if(timers[ack_epected]==-1)return 0;
-    if((cur_time-timers[ack_epected])>=TIMER_TIMOUT)
-    {
-        cout<<cur_time<<" "<<timers[ack_epected]<<endl;
+    if((cur_time-timers[ack_epected])>=TIMER_TIMOUT){
+        // cout<<cur_time<<" "<<timers[ack_epected]<<endl;
         return 1;
     }
     return 0;
@@ -116,12 +118,34 @@ void send(seq_nr f_n, packet f_info) {
     to_physical_layer_to_receiver(s);
     start_timer(s.seq);
 }
+
+
+int retransmissions=0;
 void sender(){
-    if (network_is_ready()){
-       buffer[next_send]= from_network_layer_at_sender();
+    if (retransmissions){
+        send(next_send,buffer[next_send]);
+//        cout<<"sending frame "<<next_send<<" "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
+        cout<<">>  curent time is "<<cur_time<<endl;
+        cout<<"At Sender : sending frame no > "<<next_send<<" < with msg '"<<buffer[next_send]<<"'"<<endl;
+        increase(next_send);
+        retransmissions--;
+    }else if( nbuffer && timeout()){
+        cout<<">>  curent time is "<<cur_time<<endl;
+        cout<<"At sender: timeout "<<timers[ack_epected]<<endl;
+        next_send=ack_epected;
+        send(next_send,buffer[next_send]);
+//        cout<<"sending frame "<<next_send<<" "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
+        cout<<"At Sender : sending frame no > "<<next_send<<" < with msg '"<<buffer[next_send]<<"'"<<endl;
+        increase(next_send);
+        retransmissions=nbuffer-1;
+        cout<<ack_epected<<" "<<next_send<<endl;
+    }else if (network_is_ready()){
+        buffer[next_send]= from_network_layer_at_sender();
         nbuffer++;
         send(next_send,buffer[next_send]);
-        cout<<"sending frame "<<next_send<<" "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
+//        cout<<"sending frame no "<<next_send<<" with msg "<<buffer[next_send]<<" "<<nbuffer<<" "<<timers[next_send]<<endl;
+        cout<<">>  curent time is "<<cur_time<<endl;
+        cout<<"At Sender : sending frame no > "<<next_send<<" < with msg '"<<buffer[next_send]<<"'"<<endl;
         increase(next_send);
     }
 
@@ -134,52 +158,40 @@ void sender(){
             stop_timer(ack_epected);
             increase(ack_epected);
         }
-        cout<<ack_epected<<endl;
+        //  cout<<ack_epected<<endl;
     }
-    if( nbuffer && timeout()){
-        cout<<"timeout "<<timers[ack_epected]<<endl;
-        next_send=ack_epected;
-        for(int i=0;i<nbuffer;i++){
-            send(next_send,buffer[next_send]);//retransmit all frames
-            increase(next_send);
-        }
-       cout<<ack_epected<<" "<<next_send<<endl;
-    }
+
 }
 void receiver (){
-    // yous was here
     static int Error_Discard_upcoming_frames=0;
     Frame received_frame;
     Frame feedback;
     from_physical_layer_at_receiver(received_frame); //received_frame now is updated by physical layer
-    cout << "we entered the reciever " << endl ;
-    if(received_frame.kind == info )
-        {
-            if(received_frame.seq == expected_to_be_received && received_frame.check == 1){ //wire pair (sent, ack)
-                //send ack
-                cout<<"Ack:"<<received_frame.seq<<endl;
-                Error_Discard_upcoming_frames=0;
-                expected_to_be_received++;
-                feedback.kind=ack;
-                feedback.ack = received_frame.seq;
-                to_physical_layer_to_sender(feedback);
-            }
-            else if(received_frame.seq != expected_to_be_received || received_frame.check == 0) // wire pair (sent,discard)
-            {
-                cout<<"Discarded"<<endl;
-                Error_Discard_upcoming_frames=1;
-            }
-            else if(Error_Discard_upcoming_frames == 1) // wire pair (sent,nack)
-            {
-                cout<<"Nack:"<<received_frame.seq<<endl;
-                feedback.kind = nak;
-                feedback.ack = received_frame.seq;
-                to_physical_layer_to_sender(feedback);
-            }
+    if(received_frame.kind == info ){
+        if(received_frame.seq == expected_to_be_received && received_frame.check == 1){ //wire pair (sent, ack)
+            //send ack
+            cout<<"At Receiver: received Ack no "<<received_frame.seq<<endl;
+            Error_Discard_upcoming_frames=0;
+            expected_to_be_received++;
+            feedback.kind=ack;
+            feedback.ack = received_frame.seq;
+            to_physical_layer_to_sender(feedback);
         }
+        else if(Error_Discard_upcoming_frames == 1){ // wire pair (sent,nack)
+            cout<<"At Receiver : Nack:"<<received_frame.seq<<endl;
+            feedback.kind = nak;
+            feedback.ack = received_frame.seq;
+            to_physical_layer_to_sender(feedback);
+        }
+        else if(received_frame.seq != expected_to_be_received || received_frame.check == 0){ // wire pair (sent,discard)
+            cout<<"At Receiver: Discarded !! "<<endl;
+            Error_Discard_upcoming_frames=1;
+        }
+
+    }
     else if (received_frame.kind != info){
-            cout<<"No frames received"<<endl; //for testing
-        }
+//        cout<<"At Receiver: No Frames Received !! "<<endl; //for testing
+    }
 }
 
 int propagation_delay;
@@ -205,7 +217,6 @@ bool network(const vector<string>& data_from_input, int& index, unordered_set<in
 bool stopNetwork = false ;
 void networkInterface(int &index, unordered_set<int> &done) {
     if (!stopNetwork && !network(data_from_input, index, done)) {
-
         // Exit the loop if all strings are processed
         stopNetwork=true ;
         return;
@@ -228,14 +239,16 @@ int main() {
     }
     int index = 0;
     unordered_set<int> done;
-    for (cur_time = 0; cur_time < 12; ++cur_time) { // each step is a unit of time
+    for (cur_time = 0; cur_time < 30; ++cur_time) { // each step is a unit of time
         networkInterface(index, done);
 //        cout << "curTime: " << cur_time << " - frame in sender is " << timeline[cur_time].AT_SENDER.info
 //             << " frame in receiver " << timeline[cur_time].AT_RECEIVER.info << endl;
+//        cout<<">>  curent time is "<<cur_time<<endl;
         sender();
         receiver();
+        cout << endl ;
     }
 
 
-return 0;
+    return 0;
 }
