@@ -20,10 +20,10 @@ int generateRandomInt(int lower, int upper) {
 void to_physical_layer_to_receiver(Frame frame) {
     //TODO: introduce error here
     int random_error = generateRandomInt(1, 100);
-    
+
     if(random_error%9 ==0 && random_error%2==0)
     {
-        frame.check=0;                         //error bit
+        frame.check=zero;                         //error bit
     }
     if(random_error%6==0 && random_error%16==0)
     {
@@ -34,10 +34,10 @@ void to_physical_layer_to_receiver(Frame frame) {
 void to_physical_layer_to_sender(Frame frame) {
     //TODO : introduce error here
  int random_error = generateRandomInt(1, 100);
-    
+
     if(random_error%9 ==0 && random_error%2==0)
     {
-        frame.check=0;                         //error bit
+        frame.check=zero;                         //error bit
     }
     if(random_error%6==0 && random_error%4==0)
     {
