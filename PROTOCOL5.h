@@ -4,7 +4,7 @@
 #ifndef PROJECT_PROTOCOL5_H
 #define PROJECT_PROTOCOL5_H
 //----------------------SOME CONSTANTS---------------------------------//
-#define PROPAGATION_DELAY 2
+#define PROPAGATION_DELAY 1
 #define TIMER_TIMOUT 5
 #define MAX_PKT 1024
 #define MAX_SEQ 1000
