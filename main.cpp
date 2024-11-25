@@ -120,7 +120,7 @@ void send(seq_nr f_n, packet f_info) {
 
 int retransmissions=0;
 void sender(){
-
+//kiro
     if (retransmissions)
     {
         send(next_send,buffer[next_send]);
